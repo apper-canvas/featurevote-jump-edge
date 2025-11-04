@@ -10,7 +10,7 @@ import Empty from "@/components/ui/Empty";
 import Error from "@/components/ui/Error";
 import StatusBadge from "@/components/molecules/StatusBadge";
 import VoteButton from "@/components/molecules/VoteButton";
-import Badge from "@/components/ui/Badge";
+import Badge from "@/components/atoms/Badge";
 const RoadmapPage = () => {
   const [features, setFeatures] = useState([]);
   const [product, setProduct] = useState(null);
