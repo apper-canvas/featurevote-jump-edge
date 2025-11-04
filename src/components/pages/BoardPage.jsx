@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
-import ProductHeader from "@/components/organisms/ProductHeader";
-import FeatureGrid from "@/components/organisms/FeatureGrid";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { featureService } from "@/services/api/featureService";
 import { productService } from "@/services/api/productService";
 import { voteService } from "@/services/api/voteService";
 import { toast } from "react-toastify";
+import FeatureGrid from "@/components/organisms/FeatureGrid";
+import ProductHeader from "@/components/organisms/ProductHeader";
 
 const BoardPage = () => {
   const [features, setFeatures] = useState([]);
@@ -12,14 +13,9 @@ const BoardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [votedFeatures, setVotedFeatures] = useState(new Set());
-
-  // Mock user ID for voting (in real app, would come from auth)
-  const userId = "user123";
-  const productId = "product1";
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  
+  const { productId = "1" } = useParams();
+  const userId = "user123"; // Mock user ID for voting (in real app, would come from auth)
 
   const loadData = async () => {
     setLoading(true);
@@ -42,12 +38,21 @@ const BoardPage = () => {
     } catch (err) {
       setError("Failed to load data");
       console.error("Error loading board data:", err);
+      toast.error("Failed to load data. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVote = async (featureId) => {
+  useEffect(() => {
+    loadData();
+  }, [productId]);
+
+  const handleRetry = () => {
+    loadData();
+  };
+
+const handleVote = async (featureId) => {
     const hasVoted = votedFeatures.has(featureId);
 
     try {
@@ -71,7 +76,7 @@ const BoardPage = () => {
       } else {
         // Add vote
         await voteService.addVote(userId, featureId);
-        setVotedFeatures(prev => new Set(prev).add(featureId));
+        setVotedFeatures(prev => new Set([...prev, featureId]));
         
         // Update feature vote count
         setFeatures(prev => prev.map(feature => 
@@ -80,7 +85,7 @@ const BoardPage = () => {
             : feature
         ));
         
-        toast.success("Vote added!");
+        toast.success("Thanks for your vote!");
       }
     } catch (err) {
       toast.error("Failed to update vote");
@@ -89,15 +94,21 @@ const BoardPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <ProductHeader product={product} />
+        {/* Product Header */}
+        {product && (
+          <div className="mb-8">
+            <ProductHeader product={product} />
+          </div>
+        )}
         
+        {/* Features Grid */}
         <FeatureGrid
           features={features}
           loading={loading}
           error={error}
-          onRetry={loadData}
+          onRetry={handleRetry}
           onVote={handleVote}
           votedFeatures={votedFeatures}
         />

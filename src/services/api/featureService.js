@@ -17,11 +17,13 @@ export const featureService = {
     return { ...feature };
   },
 
-  async getByProductId(productId) {
-    await delay(350);
-    const productIdNum = parseInt(productId.replace('product', ''));
-    return mockFeatures.filter(f => f.productId === productIdNum).map(f => ({ ...f }));
-  },
+async getByProductId(productId) {
+  await delay(350);
+  const productIdNum = typeof productId === 'string' ? 
+    (productId.startsWith('product') ? parseInt(productId.replace('product', '')) : parseInt(productId)) : 
+    parseInt(productId);
+  return mockFeatures.filter(f => f.productId === productIdNum).map(f => ({ ...f }));
+},
 
   async create(featureData) {
     await delay(400);

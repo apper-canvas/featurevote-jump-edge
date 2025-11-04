@@ -22,15 +22,23 @@ const SuspenseFallback = () => (
 
 // Main routes configuration
 const mainRoutes = [
-  {
-    path: "",
-    index: true,
-    element: (
-      <Suspense fallback={<SuspenseFallback />}>
-        <BoardPage />
-      </Suspense>
-    )
-  },
+{
+  path: "",
+  index: true,
+  element: (
+    <Suspense fallback={<SuspenseFallback />}>
+      <BoardPage />
+    </Suspense>
+  )
+},
+{
+  path: "product/:productId",
+  element: (
+    <Suspense fallback={<SuspenseFallback />}>
+      <BoardPage />
+    </Suspense>
+  )
+},
   {
     path: "submit",
     element: (
