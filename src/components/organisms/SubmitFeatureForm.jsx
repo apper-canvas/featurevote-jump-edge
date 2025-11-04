@@ -1,19 +1,43 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Input from "@/components/atoms/Input";
 import Textarea from "@/components/atoms/Textarea";
 import Select from "@/components/atoms/Select";
 import Button from "@/components/atoms/Button";
 import ApperIcon from "@/components/ApperIcon";
 import { toast } from "react-toastify";
+import { productService } from "@/services/api/productService";
 
 const SubmitFeatureForm = ({ onSubmit, onCancel, loading = false }) => {
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: ""
+    category: "",
+    productId: ""
   });
 
   const [errors, setErrors] = useState({});
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setProductsLoading(true);
+        const productData = await productService.getAll();
+        setProducts(productData);
+        setProductsError(null);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+        setProductsError("Failed to load products");
+        toast.error("Failed to load products");
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const categories = [
     "UI/UX Improvement",
@@ -54,8 +78,12 @@ const SubmitFeatureForm = ({ onSubmit, onCancel, loading = false }) => {
       newErrors.description = "Description must be less than 1000 characters";
     }
 
-    if (!formData.category) {
+if (!formData.category) {
       newErrors.category = "Category is required";
+    }
+
+    if (!formData.productId) {
+      newErrors.productId = "Product selection is required";
     }
 
     setErrors(newErrors);
@@ -70,9 +98,9 @@ const SubmitFeatureForm = ({ onSubmit, onCancel, loading = false }) => {
       return;
     }
 
-    try {
+try {
       await onSubmit(formData);
-      setFormData({ title: "", description: "", category: "" });
+      setFormData({ title: "", description: "", category: "", productId: "" });
       toast.success("Feature suggestion submitted successfully!");
     } catch (error) {
       toast.error("Failed to submit feature suggestion");
@@ -101,6 +129,24 @@ const SubmitFeatureForm = ({ onSubmit, onCancel, loading = false }) => {
         helperText={`${formData.title.length}/100 characters`}
         maxLength={100}
       />
+
+<Select
+        name="productId"
+        label="Product"
+        value={formData.productId}
+        onChange={handleChange}
+        error={errors.productId}
+        disabled={productsLoading}
+      >
+        <option value="">
+          {productsLoading ? "Loading products..." : "Select a product..."}
+        </option>
+        {products.map((product) => (
+          <option key={product.Id} value={product.Id}>
+            {product.name}
+          </option>
+        ))}
+      </Select>
 
       <Select
         name="category"
