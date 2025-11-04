@@ -23,8 +23,13 @@ const Header = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const handleNavigation = (path) => {
-    navigate(path);
+const handleNavigation = (path) => {
+    if (path === "/submit" && !isAuthenticated) {
+      // Redirect to login with return path
+      navigate(`/login?redirect=${encodeURIComponent(path)}`);
+    } else {
+      navigate(path);
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -75,7 +80,7 @@ const Header = () => {
           {/* Desktop CTA & User Menu */}
           <div className="hidden md:flex items-center space-x-4">
             <Button
-              onClick={() => navigate("/submit")}
+onClick={() => handleNavigation("/submit")}
               size="md"
               className="shadow-sm"
             >
@@ -190,7 +195,7 @@ const Header = () => {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/submit")}
+onClick={() => handleNavigation("/submit")}
           className="w-14 h-14 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-full shadow-lg hover:shadow-xl transition-shadow flex items-center justify-center"
         >
           <ApperIcon name="Plus" className="w-6 h-6" />
