@@ -6,6 +6,7 @@ import Layout from "@/components/organisms/Layout";
 const BoardPage = lazy(() => import("@/components/pages/BoardPage"));
 const SubmitPage = lazy(() => import("@/components/pages/SubmitPage"));
 const RoadmapPage = lazy(() => import("@/components/pages/RoadmapPage"));
+const CreateProductPage = lazy(() => import("@/components/pages/CreateProductPage"));
 const NotFound = lazy(() => import("@/components/pages/NotFound"));
 
 // Suspense fallback component
@@ -52,6 +53,14 @@ const mainRoutes = [
     element: (
       <Suspense fallback={<SuspenseFallback />}>
         <RoadmapPage />
+      </Suspense>
+    )
+  },
+{
+    path: "products/create",
+    element: (
+      <Suspense fallback={<SuspenseFallback />}>
+        <CreateProductPage />
       </Suspense>
     )
   },
