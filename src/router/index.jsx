@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import React, { Suspense, lazy } from "react";
+import { getRouteConfig } from "./route.utils";
 import Layout from "@/components/organisms/Layout";
 
 // Lazy load page components
@@ -22,65 +23,121 @@ const SuspenseFallback = () => (
 );
 
 // Main routes configuration
-const mainRoutes = [
-{
-  path: "",
-  index: true,
-  element: (
-    <Suspense fallback={<SuspenseFallback />}>
-      <BoardPage />
-    </Suspense>
-  )
-},
-{
-  path: "product/:productId",
-  element: (
-    <Suspense fallback={<SuspenseFallback />}>
-      <BoardPage />
-    </Suspense>
-  )
-},
-  {
-    path: "submit",
-    element: (
-      <Suspense fallback={<SuspenseFallback />}>
-        <SubmitPage />
-      </Suspense>
-    )
-  },
-  {
-    path: "roadmap",
-    element: (
-      <Suspense fallback={<SuspenseFallback />}>
-        <RoadmapPage />
-      </Suspense>
-    )
-  },
-{
-    path: "products/create",
-    element: (
-      <Suspense fallback={<SuspenseFallback />}>
-        <CreateProductPage />
-      </Suspense>
-    )
-  },
-  {
-    path: "*",
-    element: (
-      <Suspense fallback={<SuspenseFallback />}>
-        <NotFound />
-      </Suspense>
-    )
+// Lazy load auth pages
+const Login = lazy(() => import("@/pages/auth/Login"));
+const Signup = lazy(() => import("@/pages/auth/Signup"));
+const Callback = lazy(() => import("@/pages/auth/Callback"));
+const ErrorPage = lazy(() => import("@/pages/auth/ErrorPage"));
+const ResetPassword = lazy(() => import("@/pages/auth/ResetPassword"));
+const PromptPassword = lazy(() => import("@/pages/auth/PromptPassword"));
+
+// Lazy load layout
+const Root = lazy(() => import("@/layouts/Root"));
+
+
+const createRoute = ({
+  path,
+  index,
+  element,
+  access,
+  children,
+  ...meta
+}) => {
+  // Get config for this route
+  let configPath;
+  if (index) {
+    configPath = "/";
+  } else {
+    configPath = path.startsWith('/') ? path : `/${path}`;
   }
+
+  const config = getRouteConfig(configPath);
+  const finalAccess = access || config?.allow;
+
+  const route = {
+    ...(index ? { index: true } : { path }),
+    element: element ? <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="text-center space-y-4">
+      <svg className="animate-spin h-12 w-12 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      </svg>
+    </div>
+  </div>}>{element}</Suspense> : element,
+    handle: {
+      access: finalAccess,
+      ...meta,
+    },
+  };
+
+  if (children && children.length > 0) {
+    route.children = children;
+  }
+
+  return route;
+};
+
+const mainRoutes = [
+  createRoute({
+    index: true,
+    element: <Layout><BoardPage /></Layout>
+  }),
+  createRoute({
+    path: "product/:productId", 
+    element: <Layout><BoardPage /></Layout>
+  }),
+  createRoute({
+    path: "submit",
+    element: <Layout><SubmitPage /></Layout>
+  }),
+  createRoute({
+    path: "roadmap",
+    element: <Layout><RoadmapPage /></Layout>
+  }),
+  createRoute({
+    path: "products/create",
+    element: <Layout><CreateProductPage /></Layout>
+  }),
+  createRoute({
+    path: "*",
+    element: <Layout><NotFound /></Layout>
+  })
 ];
 
-// Router configuration
-const routes = [
+const authRoutes = [
+  createRoute({
+    path: "login",
+    element: <Login />
+  }),
+  createRoute({
+    path: "signup", 
+    element: <Signup />
+  }),
+  createRoute({
+    path: "callback",
+    element: <Callback />
+  }),
+  createRoute({
+    path: "error",
+    element: <ErrorPage />
+  }),
+  createRoute({
+    path: "prompt-password/:appId/:emailAddress/:provider",
+    element: <PromptPassword />
+  }),
+  createRoute({
+    path: "reset-password/:appId/:fields",
+    element: <ResetPassword />
+  })
+];
+export const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
-    children: mainRoutes
-  }
-];
-
-export const router = createBrowserRouter(routes);
+    element: <Root />,
+    children: [
+      ...mainRoutes,
+      ...authRoutes
+    ],
+  },
+]);
+export default router;

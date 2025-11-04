@@ -12,8 +12,8 @@ const SubmitPage = () => {
     setLoading(true);
     
     try {
-      await featureService.create({
-        productId: "product1", // In real app, would be dynamic
+await featureService.create({
+        productId: 1, // In real app, would be dynamic
         title: formData.title,
         description: formData.description,
         category: formData.category,

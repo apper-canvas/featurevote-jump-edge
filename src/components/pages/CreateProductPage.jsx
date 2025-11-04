@@ -58,13 +58,13 @@ function CreateProductPage() {
 
     setLoading(true);
     
-    try {
+try {
       const productData = {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        ownerId: 1 // Default owner ID for demo purposes
+        ownerId: "default_owner" // Default owner ID for demo purposes
       };
-      
+
       await productService.create(productData);
       
       toast.success('Product created successfully!');

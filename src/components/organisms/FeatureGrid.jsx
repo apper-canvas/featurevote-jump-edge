@@ -26,22 +26,22 @@ const FeatureGrid = ({
 
     // Apply status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter(feature => feature.status === statusFilter);
+filtered = filtered.filter(feature => feature.status_c === statusFilter);
     }
 
     // Apply sorting
     switch (sortBy) {
       case "votes-desc":
-        filtered.sort((a, b) => b.votes - a.votes);
+        filtered.sort((a, b) => (b.votes_c || 0) - (a.votes_c || 0));
         break;
       case "votes-asc":
-        filtered.sort((a, b) => a.votes - b.votes);
+        filtered.sort((a, b) => (a.votes_c || 0) - (b.votes_c || 0));
         break;
       case "date-desc":
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        filtered.sort((a, b) => new Date(b.CreatedOn) - new Date(a.CreatedOn));
         break;
       case "date-asc":
-        filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        filtered.sort((a, b) => new Date(a.CreatedOn) - new Date(b.CreatedOn));
         break;
       default:
         break;

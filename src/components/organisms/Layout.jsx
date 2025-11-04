@@ -1,20 +1,16 @@
 import { Outlet } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
+import React from "react";
 import Header from "@/components/organisms/Header";
 
-function Layout() {
-  // App-level state and methods can be defined here
-  // and passed to child routes via useOutletContext if needed
-  const contextValue = {};
-
+const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-surface-50">
       <Header />
-      
-      <main>
-        <Outlet context={contextValue} />
+      <main className="pb-16 lg:pb-8">
+        {children || <Outlet />}
       </main>
-
+      
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -30,6 +26,6 @@ function Layout() {
       />
     </div>
   );
-}
+};
 
 export default Layout;

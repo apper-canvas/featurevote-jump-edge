@@ -1,55 +1,152 @@
-import mockProducts from "@/services/mockData/products.json";
-
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Mock product data since products.json only contains metadata
-const mockProductsData = [
-  {
-    Id: 1,
-    name: "TaskFlow Pro",
-    description: "The ultimate project management and collaboration platform for modern teams. Streamline workflows, enhance productivity, and deliver exceptional results.",
-    ownerId: "owner123",
-    createdAt: "2024-01-01T00:00:00Z"
-  }
-];
+import { getApperClient } from "@/services/apperClient";
+import { toast } from "react-toastify";
 
 export const productService = {
   async getAll() {
-    await delay(300);
-    return [...mockProductsData];
+    try {
+      const apperClient = getApperClient();
+      const response = await apperClient.fetchRecords('product_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "name_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "owner_id_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return [];
+      }
+
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching products:", error?.response?.data?.message || error);
+      toast.error("Failed to load products");
+      return [];
+    }
   },
 
   async getById(id) {
-    await delay(250);
-    const productId = typeof id === 'string' ? parseInt(id.replace('product', '')) : parseInt(id);
-    const product = mockProductsData.find(p => p.Id === productId);
-    if (!product) {
-      throw new Error("Product not found");
+    try {
+      const apperClient = getApperClient();
+      const productId = typeof id === 'string' ? parseInt(id.replace('product', '')) : parseInt(id);
+      
+      const response = await apperClient.getRecordById('product_c', productId, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "name_c"}},
+          {"field": {"Name": "description_c"}},
+          {"field": {"Name": "owner_id_c"}},
+          {"field": {"Name": "CreatedOn"}}
+        ]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching product ${id}:`, error?.response?.data?.message || error);
+      toast.error("Failed to load product");
+      return null;
     }
-    return { ...product };
   },
 
   async create(productData) {
-    await delay(400);
-    const newProduct = {
-      Id: Math.max(...mockProductsData.map(p => p.Id), 0) + 1,
-      ...productData,
-      createdAt: new Date().toISOString()
-    };
-    mockProductsData.push(newProduct);
-    return { ...newProduct };
+    try {
+      const apperClient = getApperClient();
+      const response = await apperClient.createRecord('product_c', {
+        records: [{
+          name_c: productData.name,
+          description_c: productData.description,
+          owner_id_c: productData.ownerId || "default_owner"
+        }]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} products:`, failed);
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) toast.error(record.message);
+          });
+        }
+        
+        if (successful.length > 0) {
+          toast.success("Product created successfully");
+          return successful[0].data;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error creating product:", error?.response?.data?.message || error);
+      toast.error("Failed to create product");
+      return null;
+    }
   },
 
   async update(id, updates) {
-    await delay(350);
-    const index = mockProductsData.findIndex(p => p.Id === parseInt(id));
-    if (index === -1) {
-      throw new Error("Product not found");
+    try {
+      const apperClient = getApperClient();
+      
+      // Filter updates to only include updateable fields
+      const updateableFields = {};
+      if (updates.name_c !== undefined) updateableFields.name_c = updates.name_c;
+      if (updates.description_c !== undefined) updateableFields.description_c = updates.description_c;
+      if (updates.owner_id_c !== undefined) updateableFields.owner_id_c = updates.owner_id_c;
+
+      const response = await apperClient.updateRecord('product_c', {
+        records: [{
+          Id: parseInt(id),
+          ...updateableFields
+        }]
+      });
+
+      if (!response.success) {
+        console.error(response.message);
+        toast.error(response.message);
+        return null;
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success);
+        const failed = response.results.filter(r => !r.success);
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} products:`, failed);
+          failed.forEach(record => {
+            record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`));
+            if (record.message) toast.error(record.message);
+          });
+        }
+        
+        if (successful.length > 0) {
+          toast.success("Product updated successfully");
+          return successful[0].data;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error updating product:", error?.response?.data?.message || error);
+      toast.error("Failed to update product");
+      return null;
     }
-    mockProductsData[index] = { 
-      ...mockProductsData[index], 
-      ...updates
-    };
-    return { ...mockProductsData[index] };
   }
 };

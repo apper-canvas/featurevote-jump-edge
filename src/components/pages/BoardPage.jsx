@@ -32,56 +32,58 @@ const BoardPage = () => {
       setProduct(productData);
       setFeatures(featuresData);
       
-      // Set voted features
-      const votedSet = new Set(votesData.map(vote => vote.featureId));
+// Set voted features - handle both lookup objects and direct IDs
+      const votedSet = new Set(votesData.map(vote => 
+        vote.feature_id_c?.Id || vote.feature_id_c
+      ));
       setVotedFeatures(votedSet);
     } catch (err) {
-      setError("Failed to load data");
-      console.error("Error loading board data:", err);
-      toast.error("Failed to load data. Please try again.");
+      setError(err.message || "Failed to load data");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setError("");
+    loadData();
   };
 
   useEffect(() => {
     loadData();
   }, [productId]);
 
-  const handleRetry = () => {
-    loadData();
-  };
-
 const handleVote = async (featureId) => {
-    const hasVoted = votedFeatures.has(featureId);
-
-    try {
-      if (hasVoted) {
-        // Remove vote
+  setLoading(true);
+  try {
+    const isVoted = votedFeatures.has(featureId);
+    
+    if (isVoted) {
+      // Remove vote
         await voteService.removeVote(userId, featureId);
-        setVotedFeatures(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(featureId);
-          return newSet;
-        });
         
-        // Update feature vote count
+        // Update local state
+        const newVotedSet = new Set(votedFeatures);
+        newVotedSet.delete(featureId);
+        setVotedFeatures(newVotedSet);
+        
+        // Update vote count
         setFeatures(prev => prev.map(feature => 
           feature.Id === featureId 
-            ? { ...feature, votes: feature.votes - 1 }
+            ? { ...feature, votes_c: (feature.votes_c || 0) - 1 }
             : feature
         ));
         
-        toast.success("Vote removed!");
       } else {
         // Add vote
         await voteService.addVote(userId, featureId);
+        
+        // Update local state
         setVotedFeatures(prev => new Set([...prev, featureId]));
         
-        // Update feature vote count
         setFeatures(prev => prev.map(feature => 
           feature.Id === featureId 
-            ? { ...feature, votes: feature.votes + 1 }
+            ? { ...feature, votes_c: (feature.votes_c || 0) + 1 }
             : feature
         ));
         
@@ -90,6 +92,8 @@ const handleVote = async (featureId) => {
     } catch (err) {
       toast.error("Failed to update vote");
       console.error("Error voting:", err);
+    } finally {
+      setLoading(false);
     }
   };
 

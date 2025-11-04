@@ -142,8 +142,8 @@ try {
           {productsLoading ? "Loading products..." : "Select a product..."}
         </option>
         {products.map((product) => (
-          <option key={product.Id} value={product.Id}>
-            {product.name}
+<option key={product.Id} value={product.Id}>
+            {product.name_c || product.Name}
           </option>
         ))}
       </Select>

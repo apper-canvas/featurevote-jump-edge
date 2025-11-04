@@ -1,15 +1,16 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { featureService } from "@/services/api/featureService";
 import { productService } from "@/services/api/productService";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
+import ApperIcon from "@/components/ApperIcon";
+import Layout from "@/components/organisms/Layout";
+import Loading from "@/components/ui/Loading";
+import Empty from "@/components/ui/Empty";
+import Error from "@/components/ui/Error";
 import StatusBadge from "@/components/molecules/StatusBadge";
 import VoteButton from "@/components/molecules/VoteButton";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import Empty from "@/components/ui/Empty";
-import ApperIcon from "@/components/ApperIcon";
-import { formatDistanceToNow } from "date-fns";
-import { motion } from "framer-motion";
-
+import Badge from "@/components/ui/Badge";
 const RoadmapPage = () => {
   const [features, setFeatures] = useState([]);
   const [product, setProduct] = useState(null);
@@ -52,164 +53,172 @@ const RoadmapPage = () => {
   ];
 
   const getFeaturesByStatus = (status) => {
-    return features.filter(feature => feature.status === status);
+return features.filter(feature => feature.status_c === status);
   };
 
   const formatDate = (dateString) => {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    return format(new Date(dateString), "MMM dd, yyyy");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface-50">
+      <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="h-8 bg-gradient-to-r from-surface-200 to-surface-100 rounded shimmer w-64 mb-8"></div>
-          <Loading type="cards" />
+          <div className="mb-8">
+            <div className="h-8 bg-surface-200 rounded shimmer w-64 mb-4"></div>
+            <div className="h-4 bg-surface-200 rounded shimmer w-96"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl p-6 shadow-sm border border-surface-200">
+                <div className="h-6 bg-surface-200 rounded shimmer mb-4"></div>
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="bg-surface-50 rounded-lg p-4">
+                      <div className="h-4 bg-surface-200 rounded shimmer mb-2"></div>
+                      <div className="h-3 bg-surface-200 rounded shimmer w-3/4"></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-surface-50">
+      <Layout>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Error message={error} onRetry={loadData} />
         </div>
-      </div>
+      </Layout>
     );
   }
+const statusOrder = ['submitted', 'under-review', 'planned', 'in-progress', 'staging', 'live'];
+  const roadmapColumns = statusOrder.map(status => ({
+    status,
+    features: getFeaturesByStatus(status)
+  }));
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-surface-900 mb-2">
+        <div className="mb-12">
+          <h1 className="text-3xl font-bold text-surface-900 mb-4">
             Product Roadmap
           </h1>
-          <p className="text-surface-600">
-            Track the progress of feature suggestions from idea to implementation
+          <p className="text-lg text-surface-600">
+            Track the progress of features from submission to launch. Features move through our development pipeline based on community feedback and business priorities.
           </p>
         </div>
 
-        {/* Roadmap Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-          {statusColumns.map((column) => {
-            const columnFeatures = getFeaturesByStatus(column.key);
-            
-            return (
-              <div key={column.key} className="bg-white rounded-xl border border-surface-200 overflow-hidden">
-                {/* Column Header */}
-                <div className="p-4 border-b border-surface-200 bg-surface-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <ApperIcon name={column.icon} className="w-4 h-4 text-surface-600" />
-                      <h3 className="font-semibold text-surface-900 text-sm">
-                        {column.title}
-                      </h3>
-                    </div>
-                    <span className="text-xs font-medium text-surface-500 bg-surface-100 px-2 py-1 rounded-full">
-                      {columnFeatures.length}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <div className="p-4 space-y-3 max-h-[80vh] overflow-y-auto">
-                  {columnFeatures.length === 0 ? (
-                    <div className="text-center py-8">
-                      <ApperIcon name="Package" className="w-8 h-8 text-surface-300 mx-auto mb-2" />
-                      <p className="text-xs text-surface-500">No features</p>
-                    </div>
-                  ) : (
-                    columnFeatures.map((feature, index) => (
-                      <motion.div
-                        key={feature.Id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        className="p-3 border border-surface-200 rounded-lg hover:shadow-sm transition-shadow cursor-pointer group"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-surface-900 text-sm line-clamp-2 group-hover:text-primary-600 transition-colors">
-                            {feature.title}
-                          </h4>
-                          
-                          <VoteButton
-                            votes={feature.votes}
-                            hasVoted={false}
-                            onVote={() => {}}
-                            size="sm"
-                            disabled={true}
-                          />
-                        </div>
-                        
-                        {feature.category && (
-                          <div className="mb-2">
-                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-surface-100 text-surface-700 rounded-full">
-                              <ApperIcon name="Tag" className="w-3 h-3 mr-1" />
-                              {feature.category}
-                            </span>
-                          </div>
-                        )}
-                        
-                        <p className="text-xs text-surface-600 line-clamp-3 mb-3">
-                          {feature.description}
-                        </p>
-                        
-                        <div className="flex items-center justify-between text-xs text-surface-500">
-                          <span className="flex items-center">
-                            <ApperIcon name="User" className="w-3 h-3 mr-1" />
-                            {feature.authorId}
-                          </span>
-                          
-                          <span className="flex items-center">
-                            <ApperIcon name="Clock" className="w-3 h-3 mr-1" />
-                            {formatDate(feature.createdAt)}
-                          </span>
-                        </div>
-                      </motion.div>
-                    ))
-                  )}
+{/* Roadmap Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {roadmapColumns.map(({ status, features }) => (
+            <div key={status} className="bg-white rounded-xl shadow-sm border border-surface-200">
+              <div className="p-6 border-b border-surface-100">
+                <div className="flex items-center justify-between mb-2">
+                  <StatusBadge status={status} size="lg" />
+                  <span className="text-sm font-medium text-surface-500 bg-surface-100 px-2 py-1 rounded-full">
+                    {features.length}
+                  </span>
                 </div>
               </div>
-            );
-          })}
+              
+              <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
+                {features.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ApperIcon name="Package" className="w-8 h-8 text-surface-300 mx-auto mb-2" />
+                    <p className="text-sm text-surface-500">No features in this stage</p>
+                  </div>
+                ) : (
+                  features.map((feature) => (
+                    <div
+                      key={feature.Id}
+                      className="p-4 border border-surface-200 rounded-lg hover:border-primary-200 hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <h4 className="font-medium text-surface-900 text-sm line-clamp-2 group-hover:text-primary-600 transition-colors">
+                          {feature.title_c}
+                        </h4>
+                        <VoteButton 
+                          size="sm"
+                          votes={feature.votes_c || 0}
+                          hasVoted={false} // For now, not implementing voting in roadmap
+                          disabled={true}
+                        />
+                      </div>
+
+                      {feature.category_c && (
+                        <Badge 
+                          variant="secondary" 
+                          size="sm" 
+                          className="mb-3"
+                        >
+                          {feature.category_c}
+                        </Badge>
+                      )}
+
+                      <p className="text-xs text-surface-600 line-clamp-3 mb-3">
+                        {feature.description_c}
+                      </p>
+
+                      <div className="flex items-center justify-between text-xs text-surface-500">
+                        <div className="flex items-center space-x-3">
+                          <span>
+                            By {feature.author_id_c}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <ApperIcon name="Calendar" className="w-3 h-3" />
+                          <span>
+                            {formatDate(feature.CreatedOn)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Summary Stats */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-surface-200 text-center">
-            <div className="text-2xl font-bold text-surface-900 mb-1">
-              {features.length}
+        <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl p-8 border border-primary-100">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-2xl font-bold text-surface-900 mb-1">
+                {features.length}
+              </div>
+              <div className="text-sm text-surface-600">Total Features</div>
             </div>
-            <div className="text-sm text-surface-500">Total Features</div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg border border-surface-200 text-center">
-            <div className="text-2xl font-bold text-primary-600 mb-1">
-              {getFeaturesByStatus("in-progress").length}
+<div>
+              <div className="text-2xl font-bold text-surface-900 mb-1">
+                {roadmapColumns.find(col => col.status === 'live')?.features.length || 0}
+              </div>
+              <div className="text-sm text-surface-600">Live Features</div>
             </div>
-            <div className="text-sm text-surface-500">In Progress</div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg border border-surface-200 text-center">
-            <div className="text-2xl font-bold text-emerald-600 mb-1">
-              {getFeaturesByStatus("live").length}
+<div>
+              <div className="text-2xl font-bold text-surface-900 mb-1">
+                {roadmapColumns.find(col => col.status === 'in-progress')?.features.length || 0}
+              </div>
+              <div className="text-sm text-surface-600">In Development</div>
             </div>
-            <div className="text-sm text-surface-500">Shipped</div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-lg border border-surface-200 text-center">
-            <div className="text-2xl font-bold text-accent-600 mb-1">
-              {features.reduce((sum, feature) => sum + feature.votes, 0)}
+            <div>
+              <div className="text-2xl font-bold text-surface-900 mb-1">
+                {features.reduce((sum, feature) => sum + (feature.votes_c || 0), 0)}
+              </div>
+              <div className="text-sm text-surface-600">Total Votes</div>
             </div>
-            <div className="text-sm text-surface-500">Total Votes</div>
           </div>
         </div>
-      </div>
-    </div>
+</div>
+    </Layout>
   );
 };
 

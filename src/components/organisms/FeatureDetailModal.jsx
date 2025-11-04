@@ -1,17 +1,17 @@
-import { useState, useEffect } from "react";
-import Modal from "@/components/atoms/Modal";
-import Button from "@/components/atoms/Button";
-import VoteButton from "@/components/molecules/VoteButton";
-import StatusBadge from "@/components/molecules/StatusBadge";
-import CommentItem from "@/components/molecules/CommentItem";
-import Textarea from "@/components/atoms/Textarea";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import Empty from "@/components/ui/Empty";
-import ApperIcon from "@/components/ApperIcon";
+import React, { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "react-toastify";
 import { commentService } from "@/services/api/commentService";
+import ApperIcon from "@/components/ApperIcon";
+import Button from "@/components/atoms/Button";
+import Modal from "@/components/atoms/Modal";
+import Textarea from "@/components/atoms/Textarea";
+import Loading from "@/components/ui/Loading";
+import Empty from "@/components/ui/Empty";
+import Error from "@/components/ui/Error";
+import StatusBadge from "@/components/molecules/StatusBadge";
+import VoteButton from "@/components/molecules/VoteButton";
+import CommentItem from "@/components/molecules/CommentItem";
 
 const FeatureDetailModal = ({ 
   feature, 
@@ -40,47 +40,45 @@ const FeatureDetailModal = ({
     setError("");
     
     try {
-      const data = await commentService.getByFeatureId(feature.Id);
+const data = await commentService.getByFeatureId(feature.Id);
       setComments(data);
-    } catch (err) {
-      setError("Failed to load comments");
-      console.error("Error loading comments:", err);
+    } catch (error) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVote = async () => {
-    if (isVoting) return;
-    
-    setIsVoting(true);
-    try {
-      await onVote(feature.Id);
-    } finally {
-      setIsVoting(false);
+  useEffect(() => {
+    if (feature) {
+      loadComments();
     }
+  }, [feature]);
+
+  const handleVote = async () => {
+    if (!onVote) return;
+    await onVote(feature.Id);
+    // The parent component will handle the vote update
   };
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
-    if (!newComment.trim() || submittingComment) return;
+    if (!newComment.trim()) return;
 
-    setSubmittingComment(true);
-    
     try {
-      const comment = await commentService.create({
+      setSubmittingComment(true);
+      
+      await commentService.create({
         featureId: feature.Id,
         content: newComment.trim(),
         authorName: `User${Math.floor(Math.random() * 1000)}`,
         isOfficial: Math.random() > 0.8 // 20% chance of being official
       });
       
-      setComments(prev => [comment, ...prev]);
       setNewComment("");
-      toast.success("Comment added successfully!");
-    } catch (err) {
-      toast.error("Failed to add comment");
-      console.error("Error adding comment:", err);
+      await loadComments(); // Reload comments
+    } catch (error) {
+      console.error("Error adding comment:", error);
     } finally {
       setSubmittingComment(false);
     }
@@ -90,80 +88,75 @@ const FeatureDetailModal = ({
     return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   };
 
-  if (!feature) return null;
+  if (!isOpen || !feature) return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      title="Feature Details"
       size="lg"
-      className="max-h-[90vh] overflow-hidden flex flex-col"
     >
-      <div className="flex-1 overflow-y-auto">
-        {/* Header */}
-        <div className="space-y-4 mb-6">
+      <div className="space-y-6">
+        {/* Feature Header */}
+        <div className="space-y-4">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-surface-900 mb-3">
-                {feature.title}
-              </h1>
-              <StatusBadge status={feature.status} size="lg" />
-            </div>
-            
-            <VoteButton
-              votes={feature.votes}
+            <h1 className="text-2xl font-bold text-surface-900 flex-1 mr-4">
+              {feature.title_c}
+            </h1>
+            <StatusBadge status={feature.status_c} size="lg" />
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <VoteButton 
+              votes={feature.votes_c || 0}
               hasVoted={hasVoted}
               onVote={handleVote}
-              disabled={isVoting}
               size="lg"
             />
-          </div>
-
-          {/* Category */}
-          {feature.category && (
-            <div>
-              <span className="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-gradient-to-r from-surface-100 to-surface-50 text-surface-700 rounded-full border border-surface-200">
-                <ApperIcon name="Tag" className="w-4 h-4 mr-2" />
-                {feature.category}
-              </span>
+            
+            <div className="flex items-center space-x-4 text-sm text-surface-500">
+              {feature.category_c && (
+                <Badge variant="secondary" size="md">
+                  {feature.category_c}
+                </Badge>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Description */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-surface-900 mb-3">Description</h3>
-          <div className="prose max-w-none">
+        {/* Feature Description */}
+        <div className="prose max-w-none">
+          <div className="bg-surface-50 rounded-lg p-6 border border-surface-200">
+            <h3 className="text-lg font-semibold text-surface-900 mb-3">Description</h3>
             <p className="text-surface-700 leading-relaxed whitespace-pre-wrap">
-              {feature.description}
+              {feature.description_c}
             </p>
           </div>
         </div>
 
-        {/* Meta Info */}
-        <div className="flex items-center justify-between py-4 border-t border-b border-surface-200 mb-6">
-          <div className="flex items-center space-x-6">
-            <div className="flex items-center text-sm text-surface-500">
-              <ApperIcon name="Clock" className="w-4 h-4 mr-2" />
-              Created {formatDate(feature.createdAt)}
+        {/* Meta Information */}
+        <div className="flex items-center justify-between text-sm text-surface-500 py-4 border-t border-surface-200">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <ApperIcon name="Calendar" className="w-4 h-4" />
+              <span>
+                Created {formatDate(feature.CreatedOn)}
+              </span>
             </div>
-            
-            <div className="flex items-center text-sm text-surface-500">
-              <ApperIcon name="User" className="w-4 h-4 mr-2" />
-              By {feature.authorId}
+            <div className="flex items-center space-x-1">
+              <ApperIcon name="User" className="w-4 h-4" />
+              <span>
+                By {feature.author_id_c}
+              </span>
             </div>
-          </div>
-          
-          <div className="flex items-center text-sm text-surface-500">
-            <ApperIcon name="MessageCircle" className="w-4 h-4 mr-2" />
-            {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
           </div>
         </div>
 
         {/* Comments Section */}
-        <div className="space-y-6">
+        <div className="space-y-4 border-t border-surface-200 pt-6">
           <h3 className="text-lg font-semibold text-surface-900">
-            Comments ({comments.length})
+            Discussion ({comments.length})
           </h3>
 
           {/* Add Comment Form */}
@@ -171,30 +164,25 @@ const FeatureDetailModal = ({
             <Textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Share your thoughts on this feature..."
+              placeholder="Share your thoughts or ask a question..."
               rows={3}
-              className="resize-none"
+              className="w-full"
             />
-            
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-surface-500">
-                {newComment.length}/500 characters
-              </div>
-              
-              <Button 
-                type="submit" 
-                disabled={!newComment.trim() || submittingComment || newComment.length > 500}
-                size="md"
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={!newComment.trim() || submittingComment}
+                size="sm"
               >
                 {submittingComment ? (
-                  <>
-                    <ApperIcon name="Loader2" className="w-4 h-4 mr-2 animate-spin" />
-                    Adding...
-                  </>
+                  <span className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Posting...
+                  </span>
                 ) : (
                   <>
                     <ApperIcon name="Send" className="w-4 h-4 mr-2" />
-                    Add Comment
+                    Post Comment
                   </>
                 )}
               </Button>
@@ -205,20 +193,31 @@ const FeatureDetailModal = ({
           {loading ? (
             <Loading type="modal" />
           ) : error ? (
-            <Error message={error} onRetry={loadComments} />
+            <div className="text-center py-8">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={loadComments} variant="outline" size="sm">
+                <ApperIcon name="RotateCcw" className="w-4 h-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
           ) : comments.length === 0 ? (
-            <Empty
-              title="No comments yet"
-              description="Be the first to share your thoughts on this feature!"
-              icon="MessageCircle"
-            />
+            <div className="text-center py-8">
+              <ApperIcon name="MessageSquare" className="w-8 h-8 text-surface-300 mx-auto mb-3" />
+              <p className="text-surface-500">No comments yet. Be the first to share your thoughts!</p>
+            </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
               {comments.map((comment) => (
-                <CommentItem key={comment.Id} comment={comment} />
+                <CommentItem key={comment.Id} comment={{
+                  ...comment,
+                  authorName: comment.author_name_c,
+                  content: comment.content_c,
+                  isOfficial: comment.is_official_c,
+                  createdAt: comment.CreatedOn
+                }} />
               ))}
             </div>
-          )}
+)}
         </div>
       </div>
     </Modal>

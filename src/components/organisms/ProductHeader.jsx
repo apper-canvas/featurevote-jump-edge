@@ -13,9 +13,10 @@ const ProductHeader = ({ product }) => {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex-1">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent mb-4">
-              {product.name}
+{product.name_c || product.Name}
             </h1>
             <p className="text-lg text-surface-600 leading-relaxed">
+              {product.description_c}
               {product.description}
             </p>
           </div>
