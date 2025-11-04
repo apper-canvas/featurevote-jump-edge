@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { productService } from '@/services/api/productService';
 import Button from '@/components/atoms/Button';
 import Input from '@/components/atoms/Input';
-import { ApperIcon } from '@/components/ApperIcon';
+import ApperIcon from '@/components/ApperIcon';
 
 function CreateProductPage() {
   const [formData, setFormData] = useState({
